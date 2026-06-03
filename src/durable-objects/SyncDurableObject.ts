@@ -32,6 +32,8 @@ interface SlidingSyncConnectionState {
   roomNotificationCounts?: Record<string, number>;
   roomFullyReadMarkers?: Record<string, string>;
   initialSyncComplete?: boolean;
+  lastDeviceKeyChangePos?: number;
+  deviceKeyPosBySyncPos?: Record<string, number>;
   roomSentAsRead?: Record<string, boolean>;
 }
 
