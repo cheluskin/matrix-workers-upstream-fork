@@ -309,23 +309,17 @@ export async function getToDeviceMessages(
     content: JSON.parse(msg.content),
   }));
 
-  // Get the current max stream position for to-device messages
-  // This ensures we always return a valid next_batch, even on first sync
-  const currentPos = await db.prepare(`
-    SELECT COALESCE(MAX(stream_position), 0) as max_pos FROM to_device_messages
-  `).first<{ max_pos: number }>();
-  const maxStreamPos = currentPos?.max_pos || 0;
-
   // Return the appropriate next_batch:
   // - If we returned messages: use the max position of those messages
-  // - Otherwise: use the current max stream position (client is caught up)
+  // - Otherwise: keep the device cursor unchanged. Advancing to the global
+  //   to-device max can skip messages that belong to other devices now and
+  //   messages for this device that race in after the empty query.
   let nextBatch: string;
   if (messages.results.length > 0) {
     const maxReturnedPos = Math.max(...messages.results.map(m => m.stream_position));
     nextBatch = String(maxReturnedPos);
   } else {
-    // No messages to return - use current max position so client knows where we are
-    nextBatch = String(maxStreamPos);
+    nextBatch = String(sincePos);
   }
 
   return { events, nextBatch };

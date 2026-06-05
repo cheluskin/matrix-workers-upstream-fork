@@ -1511,6 +1511,7 @@ function detectNSERequest(
 
 // MSC4186 Simplified Sliding Sync handler (shared between endpoints)
 async function handleSimplifiedSlidingSync(c: Context<AppEnv>) {
+  const requestStartedAt = Date.now();
   const userId = c.get('userId');
   const db = c.env.DB;
   const syncDO = c.env.SYNC;  // Use Durable Object for connection state (not KV - avoids rate limits)
@@ -2203,7 +2204,7 @@ async function handleSimplifiedSlidingSync(c: Context<AppEnv>) {
       const waitResponse = await stub.fetch(new Request('http://internal/wait-for-events', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ timeout }),
+        body: JSON.stringify({ timeout, afterTimestamp: requestStartedAt }),
       }));
       const waitResult = await waitResponse.json() as { hasEvents: boolean };
 
