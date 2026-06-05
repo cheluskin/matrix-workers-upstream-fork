@@ -249,9 +249,14 @@ function getDeviceKeySyncCursor(
 
 function rememberDeviceKeySyncCursor(
   connectionState: ConnectionState,
+  requestPos: number,
   responsePos: number,
   deviceKeyPos: number,
 ): void {
+  if (responsePos <= requestPos) {
+    return;
+  }
+
   connectionState.lastDeviceKeyChangePos = Math.max(
     connectionState.lastDeviceKeyChangePos ?? 0,
     deviceKeyPos,
@@ -1292,7 +1297,7 @@ app.post('/_matrix/client/unstable/org.matrix.msc3575/sync', requireAuth(), asyn
       const lastDeviceKeyChangePos = getDeviceKeySyncCursor(connectionState, sincePos, isInitialSync);
       const { changed: deviceListChanged, left: deviceListLeft, newLastPos } =
         await buildE2EEDeviceListChanges(c.env, db, userId, lastDeviceKeyChangePos);
-      rememberDeviceKeySyncCursor(connectionState, currentStreamPos, newLastPos);
+      rememberDeviceKeySyncCursor(connectionState, sincePos, currentStreamPos, newLastPos);
 
       response.extensions.e2ee = {
         device_lists: {
@@ -1939,7 +1944,7 @@ async function handleSimplifiedSlidingSync(c: Context<AppEnv>) {
       const lastDeviceKeyChangePos = getDeviceKeySyncCursor(connectionState, sincePos, isInitialSync);
       const { changed: deviceListChanged, left: deviceListLeft, newLastPos } =
         await buildE2EEDeviceListChanges(c.env, db, userId, lastDeviceKeyChangePos);
-      rememberDeviceKeySyncCursor(connectionState, currentStreamPos, newLastPos);
+      rememberDeviceKeySyncCursor(connectionState, sincePos, currentStreamPos, newLastPos);
 
       response.extensions.e2ee = {
         device_lists: { changed: deviceListChanged, left: deviceListLeft },
